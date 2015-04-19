@@ -97,11 +97,43 @@ router.get('/api/busDriver/:driverCode/:line/:lastStop/:long/:lat', function(req
             console.dir(driv);
         }
     });
-    res.sendStatus(200)
 
     /**
      * SORT IN HERE THE ROUTE DOC, SO IF PAST ALL THEN WE HAVE ROUTE FOR THAT LINE!
      */
+    //See that there's no route, so then check to find last stop
+    Routes.find({line: req.param('line')}, function(err,doc){
+        //Back to the start, so unravel and save into routes
+        if(doc.length == 0){
+            //find by last stop, then sort ascending
+            Driver.find({lastStop: req.param('lastStop')}).sort(date).exec(function(err,docs){
+                if(docs.length > 1){
+                     temp = [];
+
+                    //Go through docs and insert into array. Don't double count the last one.
+                    for(i=0;i>docs.length-1;i++){
+                        temp.push({locationCode: docs[i].lastStop, lat: docs[i].lat, lon: docs[i].lon})
+                    }
+
+                    var routes = new Routes({
+                        line : req.param('line'),
+                        route : temp
+                    })
+                    //save the new route
+                    routes.save(function(err, rout) {
+                        if (err){
+                            console.error(err);
+                            res.sendStatus(500);
+                        }else{
+                            console.dir(rout);
+                        }
+                    })
+                }
+            })
+        }
+    })
+    res.sendStatus(200)
+
 });
 
 router.get('/api/nextBus/:line/:locationCode/:long/:lat', function(req,res){
@@ -113,30 +145,25 @@ router.get('/api/nextBus/:line/:locationCode/:long/:lat', function(req,res){
      * On top use our drivers data to work out average speed, and calculate our own timings.
      * Future can use a neural network to learn timings based on time, day, weather and average speed. (SOM?)
      */
-    Driver.distinct('code',function(err,results){
-        console.log(results);
-    });
-    Routes.find({line: req.param('line')},function(err,data){
 
-        checkRoutes(data.route);
+    Routes.find({line: req.param('line')}, function(err,data){
+        if(data.length > 0)
+            Driver.find({line: 'line', code: 'code'}).sort(-date).exec(function(err,docs){
+
+            })
     })
     res.sendStatus(200);
     /*if line in DB
-        can see if in radius then exclude from analysis, by looking up stop code and position in array
-    else
-        agg on driver and line, order on time. if its in the past then its visited your stop.
+     can see if in radius then exclude from analysis, by looking up stop code and position in array
+     else
+     agg on driver and line, order on time. if its in the past then its visited your stop.
 
-    var driver+line = above
+     var driver+line = above
 
-    var estimate time = route the locations and take distance, and average speed.
-    return estimate timing, and if delayed or not, as well as lat and long
-    */
+     var estimate time = route the locations and take distance, and average speed.
+     return estimate timing, and if delayed or not, as well as lat and long
+     */
 });
 
 
-function checkRoutes(data){
-    for(i =0; i>data;i++){
-
-    }
-}
 module.exports = router;
