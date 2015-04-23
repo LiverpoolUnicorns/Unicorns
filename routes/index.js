@@ -193,7 +193,7 @@ router.get('/api/nextBus/:line/:locationCode/:long/:lat', function(req,res){
                             index = i;
                         }
                     }
-                    //DO TIMING AND SEND BACK TO USER
+                    //DO TIMING AND SEND BACK TO USER, NEED TO AVERAGE OUT
                     res.send()
                     });
                 });
